@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
 import {
-  Bot, CalendarClock, Check, Clipboard, FileText, Home, Mail, Menu, Moon,
-  Plus, Sun, Trash2, X, Zap,
+  ArrowDown, ArrowUp, Bot, CalendarClock, Check, Clipboard, Clock, FileText,
+  Flag, Home, Mail, Menu, Moon, Plus, Sun, Trash2, X, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -96,15 +96,159 @@ function draftEmail(raw: string, tone: string): string {
   return `Subject: ${subjects[intent]}\n\n${greet}\n\n${(bodies[tone] ?? bodies["Formal"] ?? {})[intent] ?? ""}\n\n${followUp}\n\n${close}`;
 }
 
-function WorkspaceTool({ kind }: { kind: Exclude<ToolId, "home" | "chat"> }) {
+// ---------- Task planner ----------
+type TaskPriority = "Low" | "Important" | "Highly important" | "Critical";
+type TaskStatus = "New" | "In progress" | "Completed";
+type PlannerTask = { id: string; title: string; minutes: number; priority: TaskPriority; status: TaskStatus };
+
+const TASKS_KEY = "nexa-planner-tasks";
+const PRIORITIES: TaskPriority[] = ["Low", "Important", "Highly important", "Critical"];
+const STATUSES: TaskStatus[] = ["New", "In progress", "Completed"];
+const priorityRank: Record<TaskPriority, number> = { "Critical": 3, "Highly important": 2, "Important": 1, "Low": 0 };
+const priorityStyle: Record<TaskPriority, string> = {
+  Low: "bg-muted text-muted-foreground",
+  Important: "bg-primary/15 text-primary",
+  "Highly important": "bg-accent text-accent-foreground ring-1 ring-primary/40",
+  Critical: "bg-primary text-primary-foreground",
+};
+const statusStyle: Record<TaskStatus, string> = {
+  New: "bg-muted text-muted-foreground",
+  "In progress": "bg-primary/15 text-primary",
+  Completed: "bg-secondary text-secondary-foreground line-through",
+};
+
+const sampleTasks: PlannerTask[] = [
+  { id: newId(), title: "Finish Q4 launch proposal", minutes: 120, priority: "Critical", status: "In progress" },
+  { id: newId(), title: "Review weekly metrics dashboard", minutes: 45, priority: "Important", status: "New" },
+  { id: newId(), title: "Reply to client feedback emails", minutes: 30, priority: "Highly important", status: "New" },
+  { id: newId(), title: "Prepare team check-in agenda", minutes: 20, priority: "Low", status: "Completed" },
+];
+
+function loadTasks(): PlannerTask[] {
+  if (typeof window === "undefined") return sampleTasks;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(TASKS_KEY) || "null") as PlannerTask[] | null;
+    if (parsed) return parsed;
+  } catch { /* start fresh */ }
+  return sampleTasks;
+}
+
+const fmtMinutes = (m: number) => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`;
+
+function buildPlan(tasks: PlannerTask[], period: "Daily" | "Weekly"): string {
+  const open = tasks.filter(t => t.status !== "Completed").sort((a, b) => priorityRank[b.priority] - priorityRank[a.priority]);
+  if (!open.length) return "All tasks are completed — nothing left to schedule. Nice work!";
+  const slots = period === "Daily" ? ["08:30", "10:30", "13:00", "15:00", "16:30"] : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const lines = open.map((t, i) => `${slots[i % slots.length]}  ${t.title} — ${fmtMinutes(t.minutes)} (${t.priority})`);
+  const total = open.reduce((sum, t) => sum + t.minutes, 0);
+  return `${period.toUpperCase()} PLAN\n\n${lines.join("\n")}\n\nTotal estimated effort: ${fmtMinutes(total)} across ${open.length} open task${open.length === 1 ? "" : "s"}.\nCritical and highly important tasks are scheduled first.`;
+}
+
+function PlannerTool() {
+  const [tasks, setTasks] = useState<PlannerTask[]>([]);
+  const [title, setTitle] = useState("");
+  const [minutes, setMinutes] = useState("60");
+  const [priority, setPriority] = useState<TaskPriority>("Important");
+  const [period, setPeriod] = useState<"Daily" | "Weekly">("Daily");
+  const [plan, setPlan] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => { setTasks(loadTasks()); }, []);
+  const persist = (next: PlannerTask[]) => { setTasks(next); localStorage.setItem(TASKS_KEY, JSON.stringify(next)); };
+
+  const addTask = () => {
+    const mins = Math.max(5, Math.round(Number(minutes) || 0));
+    if (!title.trim() || !mins) return;
+    persist([...tasks, { id: newId(), title: title.trim(), minutes: mins, priority, status: "New" }]);
+    setTitle(""); setMinutes("60"); setPriority("Important");
+  };
+  const updateTask = (id: string, patch: Partial<PlannerTask>) => persist(tasks.map(t => t.id === id ? { ...t, ...patch } : t));
+  const removeTask = (id: string) => persist(tasks.filter(t => t.id !== id));
+  const moveTask = (id: string, dir: -1 | 1) => {
+    const i = tasks.findIndex(t => t.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= tasks.length) return;
+    const next = [...tasks];
+    const a = next[i]; const b = next[j];
+    if (a && b) { next[i] = b; next[j] = a; persist(next); }
+  };
+
+  const generatePlan = () => {
+    if (!tasks.length) return;
+    setLoading(true); setPlan("");
+    window.setTimeout(() => { setPlan(buildPlan(tasks, period)); setLoading(false); }, 850);
+  };
+
+  const openCount = tasks.filter(t => t.status !== "Completed").length;
+  const doneCount = tasks.length - openCount;
+
+  return <section className="mx-auto w-full max-w-5xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="mb-7"><p className="mb-2 font-mono text-xs uppercase text-primary">Nexa workspace / planner</p><h1 className="font-display text-3xl font-semibold md:text-4xl">AI Task Planner</h1><p className="mt-2 text-muted-foreground">Add tasks with time estimates and importance, track their progress, and let Nexa shape your day or week.</p></div>
+
+    <div className="grid gap-5 xl:grid-cols-2">
+      <div className="space-y-5">
+        <div className="rounded-lg border bg-card p-5 shadow-sm">
+          <label className="mb-2 block text-sm font-semibold" htmlFor="planner-title">Add a task</label>
+          <input id="planner-title" value={title} onChange={e => setTitle(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addTask(); }} placeholder="e.g. Finish the client proposal" className="w-full rounded-md border bg-background/60 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+            <div className="flex items-center gap-2">
+              <Clock className="size-4 shrink-0 text-muted-foreground" />
+              <input aria-label="Estimated minutes" type="number" min={5} step={5} value={minutes} onChange={e => setMinutes(e.target.value)} className="w-24 rounded-md border bg-background/60 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+              <span className="text-xs text-muted-foreground">min</span>
+            </div>
+            <Select value={priority} onValueChange={v => setPriority(v as TaskPriority)}><SelectTrigger aria-label="Task importance" className="sm:w-44"><SelectValue /></SelectTrigger><SelectContent>{PRIORITIES.map(p => <SelectItem value={p} key={p}>{p}</SelectItem>)}</SelectContent></Select>
+            <Button onClick={addTask} disabled={!title.trim()} className="ml-auto h-10 px-5"><Plus />Add task</Button>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between"><p className="text-sm font-semibold">Your tasks</p><p className="text-xs text-muted-foreground">{openCount} open · {doneCount} completed</p></div>
+          {tasks.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No tasks yet — add your first one above.</p> :
+          <ul className="space-y-2">{tasks.map((t, i) => <li key={t.id} className="rounded-md border bg-panel p-3">
+            <div className="flex items-start gap-2">
+              <div className="flex flex-col">
+                <Button variant="ghost" size="icon-sm" aria-label="Move task up" disabled={i === 0} onClick={() => moveTask(t.id, -1)}><ArrowUp /></Button>
+                <Button variant="ghost" size="icon-sm" aria-label="Move task down" disabled={i === tasks.length - 1} onClick={() => moveTask(t.id, 1)}><ArrowDown /></Button>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className={`truncate text-sm font-medium ${t.status === "Completed" ? "line-through opacity-60" : ""}`}>{t.title}</p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"><Clock className="size-3" />{fmtMinutes(t.minutes)}</span>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${priorityStyle[t.priority]}`}><Flag className="size-3" />{t.priority}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label={`Status for ${t.title}`}>
+                  {STATUSES.map(s => <button key={s} onClick={() => updateTask(t.id, { status: s })} className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${t.status === s ? statusStyle[s] : "bg-background text-muted-foreground hover:bg-accent"}`}>{s}</button>)}
+                </div>
+              </div>
+              <Button variant="ghost" size="icon-sm" aria-label={`Delete ${t.title}`} onClick={() => removeTask(t.id)}><Trash2 /></Button>
+            </div>
+          </li>)}</ul>}
+        </div>
+      </div>
+
+      <div className="relative min-h-96 rounded-lg border bg-card p-5 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <div><p className="text-sm font-semibold">Your {period.toLowerCase()} plan</p><p className="text-xs text-muted-foreground">Most important tasks are scheduled first.</p></div>
+          <Button variant="ghost" size="icon" aria-label="Copy plan" disabled={!plan} onClick={() => copyText(plan, () => { setCopied(true); setTimeout(() => setCopied(false), 1300); })}>{copied ? <Check /> : <Clipboard />}</Button>
+        </div>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+          <Select value={period} onValueChange={v => setPeriod(v as "Daily" | "Weekly")}><SelectTrigger aria-label="Plan period" className="sm:w-40"><SelectValue /></SelectTrigger><SelectContent>{["Daily", "Weekly"].map(x => <SelectItem value={x} key={x}>{x}</SelectItem>)}</SelectContent></Select>
+          <Button onClick={generatePlan} disabled={!tasks.length || loading} className="ml-auto h-10 px-5">{loading ? <><Zap className="animate-pulse" />Working…</> : <><Zap />Build my plan</>}</Button>
+        </div>
+        {loading ? <div className="flex h-64 items-center justify-center"><Shimmer className="text-sm">Nexa is organizing your schedule…</Shimmer></div> : <Textarea aria-label="Editable plan output" value={plan} onChange={e => setPlan(e.target.value)} placeholder="Your day or week plan will appear here." className="min-h-72 resize-none border-0 bg-panel p-4 font-mono text-sm shadow-none focus-visible:ring-1" />}
+      </div>
+    </div>
+  </section>;
+}
+
+function WorkspaceTool({ kind }: { kind: "email" | "notes" }) {
   const config = {
     email: { title: "Smart Email Generator", description: "Turn a rough message into a polished email.", placeholder: "e.g. Ask the product team to send final Q4 launch assets by Thursday…", action: "Generate email" },
     notes: { title: "Meeting Notes Summarizer", description: "Extract the signal from unstructured meeting notes.", placeholder: "Paste meeting notes, decisions, attendees and follow-ups…", action: "Summarize notes" },
-    planner: { title: "AI Task Planner", description: "Shape tasks and preferences into a practical schedule.", placeholder: "e.g. Finish proposal (2h), review metrics (45m), team check-in at 2pm…", action: "Build my plan" },
   }[kind];
   const [input, setInput] = useState("");
   const [tone, setTone] = useState("Formal");
-  const [period, setPeriod] = useState("Daily");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -115,7 +259,6 @@ function WorkspaceTool({ kind }: { kind: Exclude<ToolId, "home" | "chat"> }) {
     window.setTimeout(() => {
       if (kind === "email") setOutput(draftEmail(input, tone));
       if (kind === "notes") setOutput(`SUMMARY\nThe team aligned on the key priorities discussed in the meeting and confirmed the next delivery milestone.\n\nACTION ITEMS\n• Project owner — circulate the updated plan by Thursday\n• Design team — deliver final assets before the next review\n• All attendees — add feedback to the shared document\n\nDECISIONS\n• Proceed with the current launch scope\n• Use the weekly check-in to track blockers\n\nDEADLINES\n• Updated plan: Thursday\n• Final review: next scheduled team meeting`);
-      if (kind === "planner") setOutput(`${period.toUpperCase()} PRIORITY PLAN\n\n08:30  Focus block — highest-impact task\n10:30  Review and respond to priority messages\n11:00  Complete quick administrative tasks\n13:00  Collaboration block and scheduled meetings\n15:00  Second focus block — project follow-through\n16:30  Review progress and prepare tomorrow\n\nPRIORITY ORDER\n1. Time-sensitive deliverable\n2. Work that unblocks teammates\n3. Important planning and review\n4. Low-effort administrative tasks\n\nBased on: ${input.trim()}`);
       setLoading(false);
     }, 850);
   };
@@ -128,7 +271,6 @@ function WorkspaceTool({ kind }: { kind: Exclude<ToolId, "home" | "chat"> }) {
         <Textarea id={`${kind}-input`} value={input} onChange={(e) => setInput(e.target.value)} placeholder={config.placeholder} className="min-h-56 resize-none bg-background/60" />
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           {kind === "email" && <Select value={tone} onValueChange={setTone}><SelectTrigger aria-label="Email tone" className="sm:w-40"><SelectValue /></SelectTrigger><SelectContent>{["Formal","Friendly","Persuasive"].map(x => <SelectItem value={x} key={x}>{x}</SelectItem>)}</SelectContent></Select>}
-          {kind === "planner" && <Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Plan period" className="sm:w-40"><SelectValue /></SelectTrigger><SelectContent>{["Daily","Weekly"].map(x => <SelectItem value={x} key={x}>{x}</SelectItem>)}</SelectContent></Select>}
           <Button onClick={generate} disabled={!input.trim() || loading} className="ml-auto h-10 px-5">{loading ? <><Zap className="animate-pulse" />Working…</> : <><Zap />{config.action}</>}</Button>
         </div>
       </div>
@@ -249,6 +391,6 @@ export function NexaWorkspace({ initialTool = "home", threadId }: { initialTool?
       <nav className="space-y-1" aria-label="Main navigation">{navItems.map(item => <button key={item.id} onClick={() => openTool(item.id)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${tool === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}><item.icon className="size-4"/>{item.label}</button>)}</nav>
       <div className="mt-auto"><div className="mb-4 border-l-2 border-primary bg-panel p-3 text-xs leading-5 text-muted-foreground"><strong className="text-foreground">Responsible AI</strong><br/>Always review Nexa’s output before use.</div><Button variant="ghost" className="w-full justify-start" onClick={toggleTheme}>{dark ? <Sun/> : <Moon/>}{dark ? "Light mode" : "Dark mode"}</Button></div>
     </aside>
-    {mobileOpen && <button aria-label="Close menu overlay" className="fixed inset-0 z-40 bg-background/70 lg:hidden" onClick={() => setMobileOpen(false)}/>}<main className="min-h-screen px-4 pb-8 pt-24 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10">{threadId ? <ChatWorkspace key={threadId} threadId={threadId}/> : tool === "home" ? <Dashboard openTool={openTool}/> : tool === "chat" ? null : <WorkspaceTool key={tool} kind={tool}/>}</main>
+    {mobileOpen && <button aria-label="Close menu overlay" className="fixed inset-0 z-40 bg-background/70 lg:hidden" onClick={() => setMobileOpen(false)}/>}<main className="min-h-screen px-4 pb-8 pt-24 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10">{threadId ? <ChatWorkspace key={threadId} threadId={threadId}/> : tool === "home" ? <Dashboard openTool={openTool}/> : tool === "chat" ? null : tool === "planner" ? <PlannerTool key="planner"/> : <WorkspaceTool key={tool} kind={tool}/>}</main>
   </div>;
 }
