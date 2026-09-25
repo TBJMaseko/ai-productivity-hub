@@ -249,7 +249,6 @@ function WorkspaceTool({ kind }: { kind: "email" | "notes" }) {
   }[kind];
   const [input, setInput] = useState("");
   const [tone, setTone] = useState("Formal");
-  const [period, setPeriod] = useState("Daily");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -260,7 +259,6 @@ function WorkspaceTool({ kind }: { kind: "email" | "notes" }) {
     window.setTimeout(() => {
       if (kind === "email") setOutput(draftEmail(input, tone));
       if (kind === "notes") setOutput(`SUMMARY\nThe team aligned on the key priorities discussed in the meeting and confirmed the next delivery milestone.\n\nACTION ITEMS\n• Project owner — circulate the updated plan by Thursday\n• Design team — deliver final assets before the next review\n• All attendees — add feedback to the shared document\n\nDECISIONS\n• Proceed with the current launch scope\n• Use the weekly check-in to track blockers\n\nDEADLINES\n• Updated plan: Thursday\n• Final review: next scheduled team meeting`);
-      if (kind === "planner") setOutput(`${period.toUpperCase()} PRIORITY PLAN\n\n08:30  Focus block — highest-impact task\n10:30  Review and respond to priority messages\n11:00  Complete quick administrative tasks\n13:00  Collaboration block and scheduled meetings\n15:00  Second focus block — project follow-through\n16:30  Review progress and prepare tomorrow\n\nPRIORITY ORDER\n1. Time-sensitive deliverable\n2. Work that unblocks teammates\n3. Important planning and review\n4. Low-effort administrative tasks\n\nBased on: ${input.trim()}`);
       setLoading(false);
     }, 850);
   };
