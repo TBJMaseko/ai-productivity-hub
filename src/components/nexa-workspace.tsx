@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
 import {
   Bot, CalendarClock, Check, Clipboard, FileText, Home, Mail, Menu, Moon,
-  Plus, Send, Sun, Trash2, X, Zap,
+  Plus, Sun, Trash2, X, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -110,11 +110,11 @@ function ChatWorkspace({ threadId }: { threadId: string }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => { setThreads(loadThreads()); }, []);
   const active = threads.find(t => t.id === threadId);
-  useEffect(() => { if (threads.length && !active) void navigate({ to: "/chat/$threadId", params: { threadId: threads[0].id }, replace: true }); }, [active, navigate, threads]);
+  useEffect(() => { const first = threads[0]; if (first && !active) void navigate({ to: "/chat/$threadId", params: { threadId: first.id }, replace: true }); }, [active, navigate, threads]);
   useEffect(() => { textareaRef.current?.focus(); }, [threadId, status]);
   const persist = (next: StoredThread[]) => { setThreads(next); localStorage.setItem(THREADS_KEY, JSON.stringify(next)); };
   const addThread = () => { const fresh = createThread(); persist([fresh, ...threads]); void navigate({ to: "/chat/$threadId", params: { threadId: fresh.id } }); };
-  const removeThread = (id: string) => { const remaining = threads.filter(t => t.id !== id); const next = remaining.length ? remaining : [createThread()]; persist(next); if (id === threadId) void navigate({ to: "/chat/$threadId", params: { threadId: next[0].id } }); };
+  const removeThread = (id: string) => { const remaining = threads.filter(t => t.id !== id); const next = remaining.length ? remaining : [createThread()]; const first = next[0]; persist(next); if (id === threadId && first) void navigate({ to: "/chat/$threadId", params: { threadId: first.id } }); };
   const send = () => {
     if (!active || !prompt.trim() || status !== "ready") return;
     const text = prompt.trim(); setPrompt(""); setStatus("submitted");
@@ -133,7 +133,7 @@ function ChatWorkspace({ threadId }: { threadId: string }) {
     <aside className="hidden w-64 shrink-0 border-r bg-panel p-3 md:flex md:flex-col"><Button onClick={addThread} className="mb-4 w-full"><Plus/>New conversation</Button><p className="mb-2 px-2 font-mono text-[11px] uppercase text-muted-foreground">Recent</p><div className="space-y-1 overflow-y-auto">{threads.map(t => <div key={t.id} className={`group flex items-center rounded-md ${t.id === threadId ? "bg-accent" : "hover:bg-accent/60"}`}><button className="min-w-0 flex-1 truncate px-3 py-2 text-left text-sm" onClick={() => void navigate({ to: "/chat/$threadId", params: { threadId: t.id } })}>{t.title}</button><Button variant="ghost" size="icon-sm" className="mr-1 opacity-0 group-hover:opacity-100 focus:opacity-100" aria-label={`Delete ${t.title}`} onClick={() => removeThread(t.id)}><Trash2/></Button></div>)}</div></aside>
     <div className="flex min-w-0 flex-1 flex-col"><header className="flex items-center justify-between border-b px-4 py-3"><div><p className="font-display font-semibold">Ask Nexa</p><p className="text-xs text-muted-foreground">Workplace thinking partner · saved on this device</p></div><Button variant="outline" size="sm" className="md:hidden" onClick={addThread}><Plus/>New</Button></header>
       <Conversation><ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 py-7">{active.messages.map(message => <Message key={message.id} from={message.role}><MessageContent className={message.role === "user" ? "bg-primary text-primary-foreground" : ""}>{message.parts.map((part, i) => part.type === "text" ? <MessageResponse key={i}>{part.text}</MessageResponse> : null)}</MessageContent></Message>)}{status === "submitted" && <Message from="assistant"><MessageContent><Shimmer>Thinking with you…</Shimmer></MessageContent></Message>}</ConversationContent><ConversationScrollButton/></Conversation>
-      <div className="border-t p-3"><PromptInput onSubmit={(e) => { e.preventDefault(); send(); }} className="mx-auto max-w-3xl"><PromptInputTextarea ref={textareaRef} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask Nexa about work, priorities, communication…"/><PromptInputFooter className="justify-end"><PromptInputSubmit status={status} disabled={!prompt.trim()}/></PromptInputFooter></PromptInput><p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">Review AI-generated guidance before using it at work.</p></div>
+      <div className="border-t p-3"><PromptInput onSubmit={() => { send(); }} className="mx-auto max-w-3xl"><PromptInputTextarea ref={textareaRef} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask Nexa about work, priorities, communication…"/><PromptInputFooter className="justify-end"><PromptInputSubmit status={status} disabled={!prompt.trim()}/></PromptInputFooter></PromptInput><p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">Review AI-generated guidance before using it at work.</p></div>
     </div>
   </section>;
 }
@@ -144,7 +144,7 @@ export function NexaWorkspace({ initialTool = "home", threadId }: { initialTool?
   const [dark, setDark] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => { const saved = localStorage.getItem("nexa-theme"); const next = saved !== "light"; setDark(next); document.documentElement.classList.toggle("dark", next); }, []);
-  const openTool = (id: ToolId) => { setMobileOpen(false); if (id === "chat") { const list = loadThreads(); void navigate({ to: "/chat/$threadId", params: { threadId: list[0].id } }); } else { setTool(id); if (threadId) void navigate({ to: "/" }); } };
+  const openTool = (id: ToolId) => { setMobileOpen(false); if (id === "chat") { const list = loadThreads(); const first = list[0]; if (first) void navigate({ to: "/chat/$threadId", params: { threadId: first.id } }); } else { setTool(id); if (threadId) void navigate({ to: "/" }); } };
   const toggleTheme = () => { const next = !dark; setDark(next); document.documentElement.classList.toggle("dark", next); localStorage.setItem("nexa-theme", next ? "dark" : "light"); };
   return <div className="nexa-grid min-h-screen bg-background text-foreground">
     <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center border-b bg-background/90 px-4 backdrop-blur-xl lg:hidden"><Button variant="ghost" size="icon" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu/></Button><div className="ml-3 flex items-center gap-2 font-display text-lg font-bold"><span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground"><Zap/></span>NEXA</div><Button variant="ghost" size="icon" className="ml-auto" aria-label="Toggle theme" onClick={toggleTheme}>{dark ? <Sun/> : <Moon/>}</Button></header>
