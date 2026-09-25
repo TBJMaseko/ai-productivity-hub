@@ -5,7 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
 import {
   ArrowDown, ArrowUp, Bot, CalendarClock, Check, Clipboard, Clock, FileText,
-  Flag, Home, Mail, Menu, Moon, Plus, Sun, Trash2, X, Zap,
+  Flag, Home, Mail, Menu, Moon, Plus, ShieldAlert, Sun, Trash2, X, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +42,13 @@ function loadThreads(): StoredThread[] {
   const first = createThread();
   localStorage.setItem(THREADS_KEY, JSON.stringify([first]));
   return [first];
+}
+
+function AiNotice() {
+  return <div role="note" aria-label="AI notice" className="mb-6 flex items-start gap-2.5 rounded-md border border-primary/30 bg-primary/5 px-3.5 py-2 text-xs leading-5 text-muted-foreground">
+    <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
+    <p><strong className="font-semibold text-foreground">AI notice:</strong> Nexa's responses can contain mistakes — always check and verify AI-generated output before relying on it. Please don't enter confidential or sensitive information, as AI tools carry security risks.</p>
+  </div>;
 }
 
 function copyText(text: string, done: () => void) {
