@@ -102,7 +102,7 @@ function Dashboard({ openTool }: { openTool: (id: ToolId) => void }) {
   </section>;
 }
 
-const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)] as T;
 
 function nexaReply(raw: string): string {
   const text = raw.toLowerCase();
