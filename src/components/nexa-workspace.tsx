@@ -20,7 +20,7 @@ type StoredThread = { id: string; title: string; updatedAt: number; messages: UI
 const THREADS_KEY = "nexa-chat-threads";
 
 const navItems = [
-  { id: "home" as const, label: "Overview", icon: Home },
+  { id: "home" as const, label: "Dashboard", icon: Home },
   { id: "email" as const, label: "Email generator", icon: Mail },
   { id: "notes" as const, label: "Meeting notes", icon: FileText },
   { id: "planner" as const, label: "Task planner", icon: CalendarClock },
