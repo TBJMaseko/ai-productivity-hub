@@ -48,6 +48,54 @@ function copyText(text: string, done: () => void) {
   void navigator.clipboard.writeText(text).then(done);
 }
 
+function draftEmail(raw: string, tone: string): string {
+  const t = raw.toLowerCase();
+  const intent =
+    /thank|appreciat|grateful/.test(t) ? "thanks" :
+    /sorry|apolog|delay|late|mistake/.test(t) ? "apology" :
+    /meeting|call|schedule|catch up|sync/.test(t) ? "meeting" :
+    /update|progress|status|report/.test(t) ? "update" :
+    /leave|sick|off|vacation|absent/.test(t) ? "leave" :
+    /ask|request|send|need|share|by |deadline|please/.test(t) ? "request" : "general";
+  const subjects: Record<string, string> = {
+    thanks: "Thank you", apology: "Apology and next steps", meeting: "Meeting request",
+    update: "Project update", leave: "Time-off notice", request: "Request for your support", general: "Following up",
+  };
+  const bodies: Record<string, Record<string, string>> = {
+    Formal: {
+      thanks: "I would like to sincerely thank you for your support and contribution. Your effort made a meaningful difference and is greatly appreciated.",
+      apology: "Please accept my apologies for the inconvenience caused. I have reviewed what happened and am taking steps to ensure it is resolved promptly and does not recur.",
+      meeting: "I would like to arrange a meeting to discuss this matter in more detail. Kindly let me know which times suit your schedule over the coming days.",
+      update: "I am writing to provide a brief update on the current progress. Work is on track, and I will share further details as the next milestones are completed.",
+      leave: "I would like to formally notify you that I will be unavailable for the upcoming period. I will ensure my responsibilities are covered and handed over appropriately.",
+      request: "I am writing to kindly request your assistance with the matter we discussed. Your timely support would be greatly appreciated to help us meet our upcoming deadline.",
+      general: "I am following up on our recent discussion and would welcome your thoughts on the next steps.",
+    },
+    Friendly: {
+      thanks: "Just wanted to say a big thank you — your help really made a difference, and I truly appreciate it!",
+      apology: "I'm really sorry about the trouble this caused. I'm on it and will make sure everything's sorted out quickly.",
+      meeting: "Would you be up for a quick chat about this? Let me know what time works best for you — happy to fit around your schedule.",
+      update: "Quick update from my side: things are moving along nicely, and I'll keep you posted as we hit the next milestones.",
+      leave: "Just a heads-up that I'll be away for a little while. I'll make sure everything's covered before I go!",
+      request: "Hope you're doing well! Could you give me a hand with what we talked about? It would really help us stay on track.",
+      general: "Just checking in on what we discussed — would love to hear your thoughts when you get a moment.",
+    },
+    Persuasive: {
+      thanks: "Your contribution had a real impact on our results, and I'd love for us to keep building on this momentum together.",
+      apology: "I take full responsibility for this, and I've already put a clear plan in place to fix it. I'm confident this will lead to a stronger outcome for everyone.",
+      meeting: "A short conversation could help us align quickly and avoid delays down the line. Could we find 20 minutes this week?",
+      update: "We're making strong progress, and with continued support we're well placed to deliver ahead of expectations.",
+      leave: "I've planned my time away carefully so that the team stays fully supported and our priorities remain on schedule.",
+      request: "Your support on this would make a real difference — acting now will keep us ahead of the deadline and ensure a great result for the whole team.",
+      general: "I believe moving forward on this now will create real value for the team, and I'd welcome your go-ahead.",
+    },
+  };
+  const greet = tone === "Friendly" ? "Hi there," : tone === "Formal" ? "Dear colleague," : "Hello,";
+  const close = tone === "Friendly" ? "Thanks so much,\n[Your name]" : tone === "Formal" ? "Kind regards,\n[Your name]" : "Best regards,\n[Your name]";
+  const followUp = tone === "Friendly" ? "Let me know if you have any questions!" : "Please don't hesitate to reach out if you need any further information.";
+  return `Subject: ${subjects[intent]}\n\n${greet}\n\n${(bodies[tone] ?? bodies.Formal)[intent]}\n\n${followUp}\n\n${close}`;
+}
+
 function WorkspaceTool({ kind }: { kind: Exclude<ToolId, "home" | "chat"> }) {
   const config = {
     email: { title: "Smart Email Generator", description: "Turn a rough message into a polished email.", placeholder: "e.g. Ask the product team to send final Q4 launch assets by Thursday…", action: "Generate email" },
@@ -65,7 +113,7 @@ function WorkspaceTool({ kind }: { kind: Exclude<ToolId, "home" | "chat"> }) {
     if (!input.trim()) return;
     setLoading(true); setOutput("");
     window.setTimeout(() => {
-      if (kind === "email") setOutput(`Subject: Quick follow-up and next steps\n\nHi team,\n\n${input.trim()}\n\nPlease let me know if you have any questions or need additional context. I’d appreciate your response at your earliest convenience.\n\nBest regards,\n[Your name]\n\nTone: ${tone}`);
+      if (kind === "email") setOutput(draftEmail(input, tone));
       if (kind === "notes") setOutput(`SUMMARY\nThe team aligned on the key priorities discussed in the meeting and confirmed the next delivery milestone.\n\nACTION ITEMS\n• Project owner — circulate the updated plan by Thursday\n• Design team — deliver final assets before the next review\n• All attendees — add feedback to the shared document\n\nDECISIONS\n• Proceed with the current launch scope\n• Use the weekly check-in to track blockers\n\nDEADLINES\n• Updated plan: Thursday\n• Final review: next scheduled team meeting`);
       if (kind === "planner") setOutput(`${period.toUpperCase()} PRIORITY PLAN\n\n08:30  Focus block — highest-impact task\n10:30  Review and respond to priority messages\n11:00  Complete quick administrative tasks\n13:00  Collaboration block and scheduled meetings\n15:00  Second focus block — project follow-through\n16:30  Review progress and prepare tomorrow\n\nPRIORITY ORDER\n1. Time-sensitive deliverable\n2. Work that unblocks teammates\n3. Important planning and review\n4. Low-effort administrative tasks\n\nBased on: ${input.trim()}`);
       setLoading(false);
@@ -201,6 +249,6 @@ export function NexaWorkspace({ initialTool = "home", threadId }: { initialTool?
       <nav className="space-y-1" aria-label="Main navigation">{navItems.map(item => <button key={item.id} onClick={() => openTool(item.id)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${tool === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}><item.icon className="size-4"/>{item.label}</button>)}</nav>
       <div className="mt-auto"><div className="mb-4 border-l-2 border-primary bg-panel p-3 text-xs leading-5 text-muted-foreground"><strong className="text-foreground">Responsible AI</strong><br/>Always review Nexa’s output before use.</div><Button variant="ghost" className="w-full justify-start" onClick={toggleTheme}>{dark ? <Sun/> : <Moon/>}{dark ? "Light mode" : "Dark mode"}</Button></div>
     </aside>
-    {mobileOpen && <button aria-label="Close menu overlay" className="fixed inset-0 z-40 bg-background/70 lg:hidden" onClick={() => setMobileOpen(false)}/>}<main className="min-h-screen px-4 pb-8 pt-24 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10">{threadId ? <ChatWorkspace threadId={threadId}/> : tool === "home" ? <Dashboard openTool={openTool}/> : tool === "chat" ? null : <WorkspaceTool kind={tool}/>}</main>
+    {mobileOpen && <button aria-label="Close menu overlay" className="fixed inset-0 z-40 bg-background/70 lg:hidden" onClick={() => setMobileOpen(false)}/>}<main className="min-h-screen px-4 pb-8 pt-24 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10">{threadId ? <ChatWorkspace key={threadId} threadId={threadId}/> : tool === "home" ? <Dashboard openTool={openTool}/> : tool === "chat" ? null : <WorkspaceTool key={tool} kind={tool}/>}</main>
   </div>;
 }
