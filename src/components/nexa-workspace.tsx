@@ -271,7 +271,6 @@ function WorkspaceTool({ kind }: { kind: "email" | "notes" }) {
         <Textarea id={`${kind}-input`} value={input} onChange={(e) => setInput(e.target.value)} placeholder={config.placeholder} className="min-h-56 resize-none bg-background/60" />
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           {kind === "email" && <Select value={tone} onValueChange={setTone}><SelectTrigger aria-label="Email tone" className="sm:w-40"><SelectValue /></SelectTrigger><SelectContent>{["Formal","Friendly","Persuasive"].map(x => <SelectItem value={x} key={x}>{x}</SelectItem>)}</SelectContent></Select>}
-          {kind === "planner" && <Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Plan period" className="sm:w-40"><SelectValue /></SelectTrigger><SelectContent>{["Daily","Weekly"].map(x => <SelectItem value={x} key={x}>{x}</SelectItem>)}</SelectContent></Select>}
           <Button onClick={generate} disabled={!input.trim() || loading} className="ml-auto h-10 px-5">{loading ? <><Zap className="animate-pulse" />Working…</> : <><Zap />{config.action}</>}</Button>
         </div>
       </div>
