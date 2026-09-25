@@ -102,6 +102,55 @@ function Dashboard({ openTool }: { openTool: (id: ToolId) => void }) {
   </section>;
 }
 
+const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)] as T;
+
+function nexaReply(raw: string): string {
+  const text = raw.toLowerCase();
+  const has = (...words: string[]) => words.some(w => text.includes(w));
+
+  if (has("sad", "depress", "anxious", "anxiety", "overwhelm", "stress", "burnout", "burned out", "burnt out", "exhaust", "tired", "cry", "lonely", "alone"))
+    return pick([
+      `I’m really glad you told me that — it sounds heavy, and you don’t have to carry it alone.\n\nA few gentle thoughts:\n\n- **Right now:** take one slow breath and name one thing that would make the next hour 10% easier.\n- **Today:** shrink your list to a single must-do. Everything else can wait without the world ending.\n- **This week:** tell one person you trust how you’re actually doing.\n\nIf this feeling is sticking around or feels like too much, please consider talking to a professional or someone close to you. Want to tell me a bit more about what’s weighing on you?`,
+      `Thank you for trusting me with that. Feeling this way doesn’t mean you’re failing — it usually means you’ve been strong for too long without enough support.\n\nHere’s what I’d suggest, gently:\n\n1. Lower the bar for today — done is enough, perfect is not required.\n2. Take a real break, away from screens, even if it’s ten minutes.\n3. Reach out to one person, just to say “I’m not at my best.”\n\nWhat’s the biggest thing sitting on your mind right now?`,
+    ]);
+
+  if (has("family", "mom", "dad", "mother", "father", "partner", "husband", "wife", "boyfriend", "girlfriend", "friend", "relationship", "divorce", "breakup", "broke up", "argument", "fight with"))
+    return pick([
+      `That sounds genuinely hard, and it makes sense that it’s on your mind — personal stuff doesn’t switch off just because the workday starts.\n\nA couple of thoughts:\n\n- **Be kind to yourself** about focus right now; your attention is split for a real reason.\n- **If it helps,** write down what you’d actually want to say to them before you say it.\n- **At work,** it’s okay to quietly lower your pace for a day or two.\n\nWould you like to talk it through? I’m listening — what happened?`,
+      `I hear you. Things at home or with people we care about can take up more headspace than any deadline.\n\nYou don’t have to solve it all today. Maybe start with:\n\n1. What outcome would you actually want, if you could choose?\n2. What’s one small step toward that — a conversation, some space, an apology, a boundary?\n\nIf you want to share more, I’m here for it.`,
+    ]);
+
+  if (has("boss", "manager", "coworker", "colleague", "team member", "conflict", "rude", "unfair", "blamed", "criticized", "fired", "laid off", "layoff"))
+    return pick([
+      `That sounds frustrating, and it’s completely understandable to feel unsettled by it.\n\nHere’s a steady way to approach it:\n\n1. **Write down the facts** — what was said or done, without interpretation.\n2. **Decide what you need** — an apology, clarity, a change, or just to be heard.\n3. **Choose the moment** — a calm, private conversation beats a reactive reply every time.\n\nIf you’d like, tell me what happened and I can help you phrase what to say next.`,
+    ]);
+
+  if (has("meeting"))
+    return `Here’s a practical approach:\n\n1. Define the decision the meeting must produce.\n2. Invite only people needed for that decision.\n3. Send context in advance.\n4. Close with owners and deadlines.\n\nWould you like me to draft an agenda?`;
+
+  if (has("priorit", "too much to do", "to-do", "todo", "deadline", "behind"))
+    return `That “everything is urgent” feeling is exhausting — let’s make it smaller.\n\n- **First:** urgent work that unblocks others\n- **Next:** focused work tied to your main goal\n- **Then:** scheduled communication and reviews\n- **Last:** small administrative tasks\n\nProtect one uninterrupted focus block before lunch. What are the top two or three things on your plate right now? I can help you order them.`;
+
+  if (has("thank"))
+    return pick([
+      `You’re very welcome — I’m glad I could help. Is there anything else on your mind?`,
+      `Anytime. I hope things go smoothly today — come back whenever you need a thinking partner.`,
+    ]);
+
+  if (has("hello", "hi", "hey", "good morning", "good afternoon"))
+    return pick([
+      `Hi there! It’s good to hear from you. How are you doing today — really?`,
+      `Hey! I’m here and listening. What’s on your mind — work, life, or a bit of both?`,
+    ]);
+
+  const snippet = raw.trim().length > 60 ? raw.trim().slice(0, 60) + "…" : raw.trim();
+  return pick([
+    `Thanks for sharing that — “${snippet}” sounds like it matters to you, and I want to make sure I really understand.\n\nCan you tell me a little more? For example:\n\n- What’s the part that worries or frustrates you most?\n- What would a good outcome look like?\n\nOnce I understand, I can help you think through next steps.`,
+    `I’m listening. There’s clearly something in “${snippet}” that’s worth slowing down for.\n\nA couple of questions so I don’t just guess:\n\n1. How long has this been on your mind?\n2. Is it something you want to **solve**, or something you needed to **say out loud**?\n\nEither is completely fine — I’m here for both.`,
+    `I hear you, and I don’t want to give you a generic answer to something specific to your life.\n\nTell me a bit more about “${snippet}” — what happened, and how are you feeling about it? Then we can figure out a next step together.`,
+  ]);
+}
+
 function ChatWorkspace({ threadId }: { threadId: string }) {
   const navigate = useNavigate();
   const [threads, setThreads] = useState<StoredThread[]>([]);
@@ -122,7 +171,7 @@ function ChatWorkspace({ threadId }: { threadId: string }) {
     const withUser = threads.map(t => t.id === threadId ? { ...t, title: t.title === "New conversation" ? text.slice(0, 34) : t.title, updatedAt: Date.now(), messages: [...t.messages, user] } : t);
     persist(withUser);
     window.setTimeout(() => {
-      const answer = text.toLowerCase().includes("meeting") ? "Here’s a practical approach:\n\n1. Define the decision the meeting must produce.\n2. Invite only people needed for that decision.\n3. Send context in advance.\n4. Close with owners and deadlines.\n\nWould you like me to draft an agenda?" : text.toLowerCase().includes("priorit") ? "Try this order:\n\n- **First:** urgent work that unblocks others\n- **Next:** focused work tied to your main goal\n- **Then:** scheduled communication and reviews\n- **Last:** small administrative tasks\n\nProtect one uninterrupted focus block before lunch." : "A good next step is to make the outcome specific, identify the smallest action that moves it forward, and block time for it today. If you share the constraints, I can help turn that into a concise plan.";
+      const answer = nexaReply(text);
       const assistant: UIMessage = { id: newId(), role: "assistant", parts: [{ type: "text", text: answer }] };
       setThreads(current => { const next = current.map(t => t.id === threadId ? { ...t, updatedAt: Date.now(), messages: [...t.messages, assistant] } : t); localStorage.setItem(THREADS_KEY, JSON.stringify(next)); return next; });
       setStatus("ready");
@@ -133,7 +182,7 @@ function ChatWorkspace({ threadId }: { threadId: string }) {
     <aside className="hidden w-64 shrink-0 border-r bg-panel p-3 md:flex md:flex-col"><Button onClick={addThread} className="mb-4 w-full"><Plus/>New conversation</Button><p className="mb-2 px-2 font-mono text-[11px] uppercase text-muted-foreground">Recent</p><div className="space-y-1 overflow-y-auto">{threads.map(t => <div key={t.id} className={`group flex items-center rounded-md ${t.id === threadId ? "bg-accent" : "hover:bg-accent/60"}`}><button className="min-w-0 flex-1 truncate px-3 py-2 text-left text-sm" onClick={() => void navigate({ to: "/chat/$threadId", params: { threadId: t.id } })}>{t.title}</button><Button variant="ghost" size="icon-sm" className="mr-1 opacity-0 group-hover:opacity-100 focus:opacity-100" aria-label={`Delete ${t.title}`} onClick={() => removeThread(t.id)}><Trash2/></Button></div>)}</div></aside>
     <div className="flex min-w-0 flex-1 flex-col"><header className="flex items-center justify-between border-b px-4 py-3"><div><p className="font-display font-semibold">Ask Nexa</p><p className="text-xs text-muted-foreground">Workplace thinking partner · saved on this device</p></div><Button variant="outline" size="sm" className="md:hidden" onClick={addThread}><Plus/>New</Button></header>
       <Conversation><ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 py-7">{active.messages.map(message => <Message key={message.id} from={message.role}><MessageContent className={message.role === "user" ? "bg-primary text-primary-foreground" : ""}>{message.parts.map((part, i) => part.type === "text" ? <MessageResponse key={i}>{part.text}</MessageResponse> : null)}</MessageContent></Message>)}{status === "submitted" && <Message from="assistant"><MessageContent><Shimmer>Thinking with you…</Shimmer></MessageContent></Message>}</ConversationContent><ConversationScrollButton/></Conversation>
-      <div className="border-t p-3"><PromptInput onSubmit={() => { send(); }} className="mx-auto max-w-3xl"><PromptInputTextarea ref={textareaRef} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask Nexa about work, priorities, communication…"/><PromptInputFooter className="justify-end"><PromptInputSubmit status={status} disabled={!prompt.trim()}/></PromptInputFooter></PromptInput><p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">Review AI-generated guidance before using it at work.</p></div>
+      <div className="border-t p-3"><PromptInput onSubmit={() => { send(); }} className="mx-auto max-w-3xl"><PromptInputTextarea ref={textareaRef} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Talk to Nexa about anything — work, life, or how you're feeling…"/><PromptInputFooter className="justify-end"><PromptInputSubmit status={status} disabled={!prompt.trim()}/></PromptInputFooter></PromptInput><p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">Review AI-generated guidance before using it at work.</p></div>
     </div>
   </section>;
 }
