@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
 import {
-  Bot, CalendarClock, Check, Clipboard, FileText, Home, Mail, Menu, Moon,
-  Plus, Sun, Trash2, X, Zap,
+  ArrowDown, ArrowUp, Bot, CalendarClock, Check, Clipboard, Clock, FileText,
+  Flag, Home, Mail, Menu, Moon, Plus, Sun, Trash2, X, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
