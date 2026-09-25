@@ -1,62 +1,146 @@
-# AI Productivity Hub
+AI Productivity Hub
 
-Build a modern, responsive web app called AI Workplace Productivity Assistant.
+AI Productivity Hub is a modern, responsive web application designed to help professionals complete common workplace tasks more efficiently using AI-powered productivity tools.
 
-Create a clean, professional SaaS-style dashboard with a sidebar and four AI productivity tools:
+The application provides a central workspace where users can generate emails, summarise meeting notes, organise tasks, and interact with an AI workplace assistant.
 
-Smart Email Generator – user enters a topic/message and selects Formal, Friendly, or Persuasive tone. Generate an editable email.
+Features
+✉️ Smart Email Generator
+Enter a topic or message.
+Choose from three tones:
+Formal
+Friendly
+Persuasive
+Generate a professional email.
+Edit and copy the generated response.
+📝 Meeting Notes Summarizer
+Paste lengthy meeting notes.
+Generate a concise summary.
+Identify:
+Action items
+Decisions
+Deadlines
+Edit and copy the generated results.
+📅 AI Task Planner
+Enter tasks and preferences.
+Generate a prioritised daily or weekly schedule.
+Organise tasks based on priority and time requirements.
+💬 AI Workplace Chatbot
+Interactive workplace productivity assistant.
+Users can ask questions and receive AI-generated responses.
+Designed to assist with workplace and productivity-related tasks.
+User Interface & Design
 
-Meeting Notes Summarizer – user pastes meeting notes and receives a concise summary with action items, decisions, and deadlines.
+AI Productivity Hub uses a clean, professional SaaS-style interface designed to be easy for first-time users to navigate.
 
-AI Task Planner – user enters tasks and preferences, then generates a prioritised daily or weekly schedule.
+Navigation
+Dashboard/home page
+Sidebar navigation
+Clearly separated productivity tools
+Simple and consistent user flow
+Responsive desktop and mobile layouts
+Themes
 
-AI Workplace Chatbot – simple chat interface for workplace/productivity questions.
+Users can choose between Light Mode and Dark Mode.
 
-Requirements:
+Dark Mode
 
-Responsive desktop and mobile design.
+Futuristic visual style
+Pink, purple, and blue colour palette
+Modern technology-inspired aesthetic
 
-Clear sidebar navigation and simple user flow.
+Light Mode
 
-Users can switch between Dark Mode and Light Mode.
+Uses the same pink, purple, and blue colour palette
+Softer and lighter tones
+Maintains the application's visual identity
+Responsible AI
 
-Dark Mode should use a futuristic palette of pink, purple, and blue shades, with a sleek modern tech aesthetic.
+AI-generated content should be reviewed by the user before being used, shared, or relied upon.
 
-Light Mode should use the same pink, purple, and blue colour palette, but with softer, lighter, more muted tones.
+The application is designed to assist users with workplace productivity rather than replace human judgement. Users remain responsible for reviewing AI-generated information and making appropriate decisions.
 
-Each tool must have an input area, clear action button, loading state, and output area.
+Technologies & Tools
+Lovable – Application development
+React – Frontend framework
+TypeScript – Programming language
+Vite – Development and build tool
+Tailwind CSS – Styling and responsive design
+GitHub – Version control and repository hosting
+AI & Prompt Engineering
 
-Outputs must be editable and easy to copy.
+The application uses structured prompts to guide AI-generated responses for different workplace tasks.
 
-Use structured prompts/mock AI responses so the app works without a complex backend or external API.
+Prompts are designed according to the user's selected task and requirements, such as email tone, meeting-note analysis, and task prioritisation.
 
-Include a visible Responsible AI disclaimer explaining that AI output should be reviewed before use.
+The application uses lightweight/mock AI responses where appropriate and does not require a complex backend or external API for its core demonstration.
 
-Include a simple dashboard/home page explaining the purpose of the application.
+Installation & Setup
+Prerequisites
 
-Use realistic sample data where helpful.
+Make sure you have:
 
-Keep the interface polished, accessible, intuitive, and easy for a first-time user to navigate.
-
-Do not add unnecessary features or complex backend functionality. Prioritise the assessment requirements, usability, presentation, and a polished futuristic visual identity.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/6e060353-a991-4c4c-aa34-7952ed7867f6).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
+Node.js
+npm
+Git
+Clone the Repository
 git clone <this-repository-url>
 cd <repository-name>
-npm i
+Install Dependencies
+npm install
+Start the Development Server
 npm run dev
-```
+
+Open the local development URL provided in the terminal to view the application.
+
+Project Structure
+
+The application is organised into reusable components and pages to keep the interface easy to maintain and navigate.
+
+src/
+├── components/
+├── pages/
+├── assets/
+├── App.tsx
+└── main.tsx
+Development with Lovable
+
+This project was initially created and developed using Lovable.
+
+Lovable was used to assist with application development, UI design, and implementation.
+
+The project can continue to be developed through the Lovable editor:
+
+Open AI Productivity Hub in Lovable
+
+Changes made through Lovable can be synchronised with the connected GitHub repository.
+
+Repository
+
+The project should be maintained in a clearly named GitHub repository:
+
+AI-Productivity-Hub
+
+Development changes should be committed and pushed regularly to maintain version history.
+
+Team Members
+
+Individual Project
+
+Name: Thandolwethu Maseko
+Future Improvements
+
+Potential future improvements include:
+
+Integration with a real AI API
+User authentication
+Saving previous AI-generated responses
+Calendar integration
+Personalised productivity recommendations
+Database storage
+Additional workplace productivity tools
+Disclaimer
+
+AI Productivity Hub is an educational project demonstrating the use of AI-assisted productivity tools.
+
+AI-generated content may contain errors or inaccuracies. Users should review and verify generated content before using it for professional, personal, or important decisions.
