@@ -93,7 +93,7 @@ function draftEmail(raw: string, tone: string): string {
   const greet = tone === "Friendly" ? "Hi there," : tone === "Formal" ? "Dear colleague," : "Hello,";
   const close = tone === "Friendly" ? "Thanks so much,\n[Your name]" : tone === "Formal" ? "Kind regards,\n[Your name]" : "Best regards,\n[Your name]";
   const followUp = tone === "Friendly" ? "Let me know if you have any questions!" : "Please don't hesitate to reach out if you need any further information.";
-  return `Subject: ${subjects[intent]}\n\n${greet}\n\n${(bodies[tone] ?? bodies.Formal)[intent]}\n\n${followUp}\n\n${close}`;
+  return `Subject: ${subjects[intent]}\n\n${greet}\n\n${(bodies[tone] ?? bodies["Formal"] ?? {})[intent] ?? ""}\n\n${followUp}\n\n${close}`;
 }
 
 function WorkspaceTool({ kind }: { kind: Exclude<ToolId, "home" | "chat"> }) {
