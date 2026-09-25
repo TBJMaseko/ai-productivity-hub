@@ -5,7 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
 import {
   ArrowDown, ArrowUp, Bot, CalendarClock, Check, Clipboard, Clock, FileText,
-  Flag, Home, Mail, Menu, Moon, Plus, Sun, Trash2, X, Zap,
+  Flag, Home, Mail, Menu, Moon, Plus, ShieldAlert, Sun, Trash2, X, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +42,13 @@ function loadThreads(): StoredThread[] {
   const first = createThread();
   localStorage.setItem(THREADS_KEY, JSON.stringify([first]));
   return [first];
+}
+
+function AiNotice() {
+  return <div role="note" aria-label="AI notice" className="mb-6 flex items-start gap-2.5 rounded-md border border-primary/30 bg-primary/5 px-3.5 py-2 text-xs leading-5 text-muted-foreground">
+    <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
+    <p><strong className="font-semibold text-foreground">AI notice:</strong> Nexa's responses can contain mistakes — always check and verify AI-generated output before relying on it. Please don't enter confidential or sensitive information, as AI tools carry security risks.</p>
+  </div>;
 }
 
 function copyText(text: string, done: () => void) {
@@ -368,7 +375,7 @@ function ChatWorkspace({ threadId }: { threadId: string }) {
     }, 850);
   };
   if (!active) return <div className="flex h-full items-center justify-center"><Shimmer>Opening Nexa…</Shimmer></div>;
-  return <section className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-6xl overflow-hidden rounded-lg border bg-card shadow-sm">
+  return <section className="mx-auto flex h-[calc(100vh-14.5rem)] w-full max-w-6xl overflow-hidden rounded-lg border bg-card shadow-sm">
     <aside className="hidden w-64 shrink-0 border-r bg-panel p-3 md:flex md:flex-col"><Button onClick={addThread} className="mb-4 w-full"><Plus/>New conversation</Button><p className="mb-2 px-2 font-mono text-[11px] uppercase text-muted-foreground">Recent</p><div className="space-y-1 overflow-y-auto">{threads.map(t => <div key={t.id} className={`group flex items-center rounded-md ${t.id === threadId ? "bg-accent" : "hover:bg-accent/60"}`}><button className="min-w-0 flex-1 truncate px-3 py-2 text-left text-sm" onClick={() => void navigate({ to: "/chat/$threadId", params: { threadId: t.id } })}>{t.title}</button><Button variant="ghost" size="icon-sm" className="mr-1 opacity-0 group-hover:opacity-100 focus:opacity-100" aria-label={`Delete ${t.title}`} onClick={() => removeThread(t.id)}><Trash2/></Button></div>)}</div></aside>
     <div className="flex min-w-0 flex-1 flex-col"><header className="flex items-center justify-between border-b px-4 py-3"><div><p className="font-display font-semibold">Ask Nexa</p><p className="text-xs text-muted-foreground">Workplace thinking partner · saved on this device</p></div><Button variant="outline" size="sm" className="md:hidden" onClick={addThread}><Plus/>New</Button></header>
       <Conversation><ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 py-7">{active.messages.map(message => <Message key={message.id} from={message.role}><MessageContent className={message.role === "user" ? "bg-primary text-primary-foreground" : ""}>{message.parts.map((part, i) => part.type === "text" ? <MessageResponse key={i}>{part.text}</MessageResponse> : null)}</MessageContent></Message>)}{status === "submitted" && <Message from="assistant"><MessageContent><Shimmer>Thinking with you…</Shimmer></MessageContent></Message>}</ConversationContent><ConversationScrollButton/></Conversation>
@@ -391,6 +398,6 @@ export function NexaWorkspace({ initialTool = "home", threadId }: { initialTool?
       <nav className="space-y-1" aria-label="Main navigation">{navItems.map(item => <button key={item.id} onClick={() => openTool(item.id)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${tool === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}><item.icon className="size-4"/>{item.label}</button>)}</nav>
       <div className="mt-auto"><div className="mb-4 border-l-2 border-primary bg-panel p-3 text-xs leading-5 text-muted-foreground"><strong className="text-foreground">Responsible AI</strong><br/>Always review Nexa’s output before use.</div><Button variant="ghost" className="w-full justify-start" onClick={toggleTheme}>{dark ? <Sun/> : <Moon/>}{dark ? "Light mode" : "Dark mode"}</Button></div>
     </aside>
-    {mobileOpen && <button aria-label="Close menu overlay" className="fixed inset-0 z-40 bg-background/70 lg:hidden" onClick={() => setMobileOpen(false)}/>}<main className="min-h-screen px-4 pb-8 pt-24 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10">{threadId ? <ChatWorkspace key={threadId} threadId={threadId}/> : tool === "home" ? <Dashboard openTool={openTool}/> : tool === "chat" ? null : tool === "planner" ? <PlannerTool key="planner"/> : <WorkspaceTool key={tool} kind={tool}/>}</main>
+    {mobileOpen && <button aria-label="Close menu overlay" className="fixed inset-0 z-40 bg-background/70 lg:hidden" onClick={() => setMobileOpen(false)}/>}<main className="min-h-screen px-4 pb-8 pt-24 sm:px-6 lg:ml-64 lg:px-10 lg:pt-10"><AiNotice />{threadId ? <ChatWorkspace key={threadId} threadId={threadId}/> : tool === "home" ? <Dashboard openTool={openTool}/> : tool === "chat" ? null : tool === "planner" ? <PlannerTool key="planner"/> : <WorkspaceTool key={tool} kind={tool}/>}</main>
   </div>;
 }
