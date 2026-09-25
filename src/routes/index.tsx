@@ -1,24 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { NexaWorkspace } from "@/components/nexa-workspace";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Nexa | AI Workplace Productivity Assistant" },
+      { name: "description", content: "Draft emails, summarize meetings, plan tasks, and solve workplace challenges with Nexa." },
+      { property: "og:title", content: "Nexa | AI Workplace Productivity Assistant" },
+      { property: "og:description", content: "A focused AI workspace for emails, meeting notes, planning, and workplace questions." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
+  return <NexaWorkspace />;
 }
